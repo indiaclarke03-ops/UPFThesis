@@ -1,0 +1,52 @@
+# Build and deploy the site to GitHub Pages on every push to main.
+# The raw Stata data is not in this repo, so CI does not re-export the JSON.
+# It re-asserts every canonical thesis number and the licence scan against the
+# committed public/data/*.json, runs the unit tests, then builds and deploys.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Assert thesis numbers and licence scan
+        run: python pipeline/check_numbers.py
+      - run: npm ci
+      - name: Unit tests (aggregation reproduces the thesis numbers)
+        run: npx vitest run
+      - name: Build
+        run: npm run build:site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

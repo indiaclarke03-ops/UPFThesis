@@ -1,0 +1,51 @@
+{
+  "name": "funding-what-we-regulate",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "data": "sh scripts/py.sh pipeline/export_site_data.py && sh scripts/py.sh pipeline/check_numbers.py",
+    "check": "sh scripts/py.sh pipeline/check_numbers.py",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "build": "npm run data && tsc -b && vite build",
+    "build:site": "tsc -b && vite build",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "preview": "vite preview --port 4173",
+    "lint": "oxlint"
+  },
+  "dependencies": {
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/inter": "^5.3.0",
+    "@tanstack/react-table": "^9.3.1",
+    "@tanstack/react-virtual": "^3.14.26",
+    "d3": "^7.9.2",
+    "d3-sankey": "^0.12.3",
+    "framer-motion": "^14.14.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.6",
+    "scrollama": "^3.2.0",
+    "topojson-client": "^3.1.0",
+    "world-atlas": "^2.0.2",
+    "zustand": "^5.1.0"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.65.1",
+    "@types/d3": "^7.4.3",
+    "@types/d3-sankey": "^0.12.5",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/topojson-client": "^3.1.5",
+    "@types/topojson-specification": "^1.0.5",
+    "@vitejs/plugin-react": "^6.1.2",
+    "lighthouse": "^12.8.2",
+    "oxlint": "^1.90.0",
+    "typescript": "~7.0.2",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.1"
+  }
+}
