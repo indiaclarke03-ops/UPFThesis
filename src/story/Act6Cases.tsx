@@ -1,12 +1,14 @@
 import * as d3 from 'd3'
+import { useState } from 'react'
 import { MexicoTimeline } from '../charts/a567_MexicoTimeline'
-import { TurkiyeFlow } from '../charts/a567_TurkiyeFlow'
+import { TurkiyeFlow, type TurView } from '../charts/a567_TurkiyeFlow'
 import { Info } from '../components/Info'
 import { ScrollStory } from '../components/ScrollStory'
-import { ActEnd, ChartFrame } from '../components/ui'
+import { ActEnd, ChartFrame, Toggle } from '../components/ui'
 import { exploreHref } from '../lib/aggregate'
 import { parentName, type SiteData } from '../lib/data'
-import { usdM } from '../lib/format'
+import { pct, usdM } from '../lib/format'
+import { useIsPhone } from '../lib/hooks'
 import { lenderColor } from '../lib/tokens'
 import './a567_acts.css'
 
@@ -15,6 +17,10 @@ const YILDIZ = 'Yildiz Holding (Ulker/pladis)'
 /** Act 6 · Two case studies, each chosen by a stated rule. */
 export default function Act6Cases({ data }: { data: SiteData }) {
   const c = data.results.computed
+  // Buttons can override the scroll-driven view; scrolling to a new step resets it.
+  const [turView, setTurView] = useState<TurView | null>(null)
+  const [mexStage, setMexStage] = useState<number | null>(null)
+  const phone = useIsPhone()
 
   /* ---------------------------------------------------------------- Türkiye */
   const tur = data.deals.filter((d) => d.iso3 === 'TUR' && d.tier1)
@@ -24,6 +30,15 @@ export default function Act6Cases({ data }: { data: SiteData }) {
   const turAfterMarketing = d3.sum(tur.filter((d) => (d.year ?? 0) >= 2018), (d) => d.t1 ?? 0)
   const mktBinding = turReg.find((e) => e.domain === 'Marketing to children' && e.strength === 'Binding')?.year
   const ssbYear = turReg.find((e) => e.domain === 'Sugary drink tax' && e.strength === 'Binding')?.year
+  const turTotal = d3.sum(tur, (d) => d.t1 ?? 0)
+  const yTotal = d3.sum(yDeals, (d) => d.t1 ?? 0)
+  const ebrdTotal = d3.sum(tur.filter((d) => d.lender === 'EBRD'), (d) => d.t1 ?? 0)
+  const stepView = (step: number): TurView => (step === 0 ? 'lenders' : step === 2 ? 'time' : 'firms')
+  const TUR_TITLES: Record<TurView, [string, string]> = {
+    lenders: ['Türkiye: who lent to whom', 'Line thickness = core Tier 1 money. Hover a lender or firm to isolate its flows.'],
+    firms: ['Türkiye: where the money went', 'Core Tier 1 money by parent group, 2010–2025, split by lender (2024 US$)'],
+    time: ['Türkiye: the money kept coming as rules arrived', 'Running total of core Tier 1 money; each dot is a deal. Bars below show rules in force.'],
+  }
 
   const turSteps = [
     <p key="0">
@@ -102,10 +117,14 @@ export default function Act6Cases({ data }: { data: SiteData }) {
       <ScrollStory
         id="act-6-turkiye"
         steps={turSteps}
-        graphic={(step) => (
+        stepLabels={['Lenders', 'Yıldız/Ülker', 'Over time', 'Abroad']}
+        onStep={() => setTurView(null)}
+        graphic={(step) => {
+          const v = turView ?? stepView(step)
+          return (
           <ChartFrame
-            title={step === 2 ? 'Türkiye: Tier 1 deals over the regulation timeline' : 'Türkiye: from lender to parent group'}
-            sub={step === 2 ? 'Each circle is a deal, sized by core Tier 1 money (2024 US$); bars show rules in force' : 'Ribbon width = core Tier 1 money, 2010–2025 (2024 US$)'}
+            title={TUR_TITLES[v][0]}
+            sub={TUR_TITLES[v][1]}
             summary={`Türkiye received ${c.turkiye.deals} Tier 1 deals worth ${usdM(c.turkiye.usd_m)}: EBRD ${c.turkiye.by_lender.EBRD} deals, IFC ${c.turkiye.by_lender.IFC}. Yıldız/Ülker received ${usdM(c.turkiye.yildiz_in_tur)} in Türkiye.`}
             table={{
               head: ['Year', 'Lender', 'Company', 'Parent group', 'US$m'],
@@ -114,10 +133,29 @@ export default function Act6Cases({ data }: { data: SiteData }) {
             explore={{ to: exploreHref({ iso3s: ['TUR'] }), label: 'Explore Türkiye’s deals' }}
             source="Commitments, US$m at 2024 prices. Regulation: H4-core events. “Sells abroad” labels are company-reported context, not thesis data."
           >
+            <div className="a567-takeaway">
+              <span className="a567-takeaway-num">{pct(yTotal / turTotal, 0)}</span>
+              <span>
+                <strong>Yıldız/Ülker alone took {usdM(yTotal)}</strong>, {pct(yTotal / turTotal, 0)} of all Tier 1 money in Türkiye. The EBRD supplied{' '}
+                {pct(ebrdTotal / turTotal, 0)} of the country total, in {c.turkiye.by_lender.EBRD} of {c.turkiye.deals} deals.
+              </span>
+            </div>
+            <div className="a567-viewbar">
+              <Toggle
+                label="Türkiye chart view"
+                value={v}
+                onChange={(x) => setTurView(x)}
+                options={[
+                  { value: 'lenders', label: 'By lender' },
+                  { value: 'firms', label: 'By firm' },
+                  { value: 'time', label: 'Over time' },
+                ]}
+              />
+            </div>
             <div className="a567-legend">
               <span><i style={{ background: lenderColor.EBRD }} />EBRD</span>
               <span><i style={{ background: lenderColor.IFC }} />IFC</span>
-              {step === 2 && (
+              {v === 'time' && (
                 <>
                   <span><i style={{ background: '#0F6E6E', borderRadius: 2 }} />Binding</span>
                   <span><i style={{ background: '#9ED3CF', borderRadius: 2 }} />Voluntary</span>
@@ -127,13 +165,14 @@ export default function Act6Cases({ data }: { data: SiteData }) {
             <TurkiyeFlow
               deals={tur}
               regulation={turReg}
-              view={step === 2 ? 'timeline' : 'flow'}
-              highlight={step === 1 ? YILDIZ : null}
-              showAbroad={step >= 3}
+              view={v}
+              highlight={!turView && step === 1 ? YILDIZ : null}
+              showAbroad={!turView && step >= 3}
               regionalCci={cci}
             />
           </ChartFrame>
-        )}
+          )
+        }}
       />
 
       {/* ------------------------------------------------------- Mexico */}
@@ -153,7 +192,11 @@ export default function Act6Cases({ data }: { data: SiteData }) {
         id="act-6-mexico"
         side="right"
         steps={mexSteps}
-        graphic={(step) => (
+        stepLabels={['Rules', 'Money', 'Lawsuits', 'Both']}
+        onStep={() => setMexStage(null)}
+        graphic={(step) => {
+          const st = mexStage ?? step
+          return (
           <ChartFrame
             title="Mexico: regulation, public money and lawsuits, 2010–2025"
             sub="Money in US$m at 2024 prices; each square is one lawsuit, by year filed"
@@ -167,16 +210,30 @@ export default function Act6Cases({ data }: { data: SiteData }) {
             explore={{ to: exploreHref({ iso3s: ['MEX'], scope: 'food' }), label: 'Explore Mexico’s deals' }}
             source="Lawsuits: Lighthouse Reports (public dataset). Regulation: H4-core events. Dashed circles = supply-chain finance, a separate measure."
           >
+            <div className="a567-viewbar">
+              <Toggle
+                label="Mexico chart layers"
+                value={st}
+                onChange={(x) => setMexStage(x)}
+                options={[
+                  { value: 0, label: phone ? 'Rules' : 'Rules only' },
+                  { value: 1, label: phone ? '+ Money' : '+ Public money' },
+                  { value: 2, label: '+ Lawsuits' },
+                  { value: 3, label: phone ? 'Litigants' : 'Funded litigants' },
+                ]}
+              />
+            </div>
             <div className="a567-legend">
               <span><i style={{ background: lenderColor['IDB Invest'] }} />IDB Invest</span>
               <span><i style={{ background: lenderColor.IFC }} />IFC</span>
               <span><i style={{ background: '#A4483A' }} />Lawsuit, parent identified</span>
               <span><i style={{ background: '#9AA0A6' }} />Lawsuit, other plaintiff</span>
-              {step >= 3 && <span><i style={{ background: '#B05A2B' }} />Funded litigant</span>}
+              {st >= 3 && <span><i style={{ background: '#B05A2B' }} />Funded litigant</span>}
             </div>
-            <MexicoTimeline deals={mex} regulation={mexReg} lawsuits={mexLaw} stage={step} fundedLitigants={litigants} />
+            <MexicoTimeline deals={mex} regulation={mexReg} lawsuits={mexLaw} stage={st} fundedLitigants={litigants} />
           </ChartFrame>
-        )}
+          )
+        }}
       />
       <div className="container" style={{ maxWidth: 900, marginTop: '4vh' }}>
         <div className="a567-dossier">

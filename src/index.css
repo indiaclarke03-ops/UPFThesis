@@ -370,7 +370,7 @@ svg text {
   height: calc(100vh - var(--nav-h) - 24px);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: safe center; /* tall graphics start at the top instead of clipping */
   min-width: 0;
 }
 .scrolly-steps {
@@ -427,6 +427,7 @@ svg text {
     padding: 0.5rem 0;
     border-bottom: 1px solid var(--rule);
     box-shadow: 0 8px 16px -12px rgba(20, 33, 61, 0.25);
+    justify-content: flex-start;
     overflow: hidden;
   }
   .dark .scrolly-graphic {
@@ -444,6 +445,81 @@ svg text {
   }
   .step-inner {
     opacity: 0.97;
+  }
+}
+
+.step-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 0.9rem;
+}
+.step-jump button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--rule);
+  background: var(--card);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem 0.28rem 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-height: 28px;
+  transition: all var(--t-fast) var(--ease);
+}
+.step-jump button:hover {
+  border-color: var(--copper);
+  color: var(--ink);
+}
+.step-jump button[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.step-jump-n {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--paper-deep);
+  color: var(--ink);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+.step-jump button[aria-pressed='true'] .step-jump-n {
+  background: var(--copper);
+  color: #fff;
+}
+.dark .step-jump button[aria-pressed='true'] {
+  background: var(--night-ink);
+  color: var(--night);
+}
+@media (max-width: 640px) {
+  /* phones: one compact row that always fits; only the active step shows its label */
+  .step-jump {
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 0.5rem;
+  }
+  .step-jump button {
+    min-height: 32px;
+    min-width: 32px;
+    padding: 0.2rem 0.3rem;
+    justify-content: center;
+  }
+  .step-jump button[aria-pressed='true'] {
+    padding-right: 0.65rem;
+  }
+  /* visually hidden (still read by screen readers) */
+  .step-jump button:not([aria-pressed='true']) .step-jump-l {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
 }
 

@@ -57,7 +57,19 @@ export function ExclusionMatrix({
     const verdict = v === 1 ? 'named on the list' : v === 0 ? 'not named' : 'not assessed'
     const dim = focus && focus !== col.key
     return (
-      <div className={`xm-cell ${isUpf && upfShown && r.kind === 'lender' ? 'xm-upf' : ''}`} key={col.key}>
+      <div className={`xm-cell ${isUpf && upfShown && r.kind === 'lender' ? 'xm-upf' : ''} ${isUpf && upfShown && focus === 'excludes_UPF_or_unhealthy_food' && r.kind === 'lender' ? 'xm-upf-focus' : ''}`} key={col.key}>
+        {isUpf && upfShown && r.kind === 'lender' && ri === 4 && (
+          <m.span
+            className="xm-stamp"
+            aria-hidden="true"
+            initial={reduce ? false : { opacity: 0, scale: 1.6, rotate: -14 }}
+            animate={{ opacity: 1, scale: 1, rotate: -9 }}
+            transition={{ duration: reduce ? 0 : 0.5, delay: reduce ? 0 : 0.55, ease: [0.22, 0.61, 0.36, 1] }}
+          >
+            <b>None</b>
+            <span>0 of 10</span>
+          </m.span>
+        )}
         <a
           href={firstUrl(r.url)}
           target="_blank"

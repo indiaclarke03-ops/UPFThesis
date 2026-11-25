@@ -58,6 +58,29 @@ export function Swimlane({ data, iso3, axis = false, height = 62 }: { data: Site
           {d3.range(Y0, Y1 + 1, 5).map((y) => (
             <line key={y} x1={x(y)} x2={x(y)} y1={4} y2={height - 4} stroke="#E7E1D6" strokeDasharray="2 3" />
           ))}
+          {/* wash: the period under a binding rule, full lane height */}
+          {bindStart != null && (
+            <m.rect
+              x={x(bindStart)}
+              y={2}
+              height={height - 4}
+              fill="#0F6E6E"
+              opacity={0.07}
+              initial={false}
+              animate={{ width: grow ? x(Y1 + 1) - x(bindStart) : 0 }}
+              transition={{ duration: dur, delay: reduce ? 0 : 0.3, ease: [0.22, 0.61, 0.36, 1] }}
+            />
+          )}
+          {fb != null && fb >= Y0 && (
+            <g>
+              <line x1={x(fb)} x2={x(fb)} y1={2} y2={height - 2} stroke="#0F6E6E" strokeWidth={1.5} />
+              {width >= 420 && (
+                <text x={x(fb) + 4} y={10} fontSize={9.5} fontWeight={700} fill="#0F6E6E">
+                  binding rule {fb}
+                </text>
+              )}
+            </g>
+          )}
           {/* baseline: no rule */}
           <rect x={x(Y0)} y={bandY} width={x(Y1 + 1) - x(Y0)} height={bandH} fill="#EFEBE3" rx={3} />
           {volStart != null && volStart < volEnd && (
@@ -85,7 +108,7 @@ export function Swimlane({ data, iso3, axis = false, height = 62 }: { data: Site
             />
           )}
           {fb != null && fb < Y0 && width >= 500 && (
-            <text x={x(Y0) + 6} y={bandY + bandH / 2} dy="0.34em" fontSize={10} fill="#fff" fontWeight={600}>
+            <text x={x(Y0) + 4} y={10} fontSize={9.5} fill="#0F6E6E" fontWeight={700}>
               binding since {fb}
             </text>
           )}
@@ -184,6 +207,7 @@ export function SwimlaneSet({ data }: { data: SiteData }) {
           <span><i style={{ width: 18, height: 10, background: '#0F6E6E', display: 'inline-block', borderRadius: 2 }} /> Binding in force</span>
           <span><svg width={10} height={8}><path d="M5,8 l-4,-6 h8 z" fill="#0F6E6E" /></svg> A measure enters into force</span>
           <span><svg width={14} height={14}><circle cx={7} cy={7} r={6} fill="#B05A2B" /></svg> Tier 1 deal (size = money)</span>
+          <span><i style={{ width: 18, height: 10, background: 'rgba(15,110,110,0.12)', display: 'inline-block', borderRadius: 2, borderLeft: '2px solid #0F6E6E' }} /> Period under a binding rule</span>
         </div>
         <form className="lane-search" onSubmit={(e) => { e.preventDefault(); add(q) }} role="search">
           <label htmlFor="lane-q" className="sr-only">Add a country</label>
@@ -198,13 +222,28 @@ export function SwimlaneSet({ data }: { data: SiteData }) {
       </div>
       {lanes.map((iso, i) => {
         const c = data.countryByIso.get(iso)
+        const ds = data.deals.filter((d) => d.iso3 === iso && d.tier1 && d.year != null)
+        const after = ds.filter((d) => d.binding === 1).length
         return (
           <div className="lane" key={iso}>
             <div className="lane-name">
               <Link to={`/country/${iso}`}>{countryName(c?.name ?? iso)}</Link>
               <span className="muted">
-                {c?.first_binding ? `Binding from ${c.first_binding}` : c?.first_voluntary ? `Voluntary from ${c.first_voluntary}` : 'No rule found'} · {c?.n_t1 ?? 0} {c?.n_t1 === 1 ? 'deal' : 'deals'}
+                {c?.first_binding ? `Binding from ${c.first_binding}` : c?.first_voluntary ? `Voluntary from ${c.first_voluntary}` : 'No rule found'}
               </span>
+              {ds.length > 0 && (
+                <span className={`lane-after ${c?.first_binding && after > 0 ? 'on' : ''}`}>
+                  {c?.first_binding ? (
+                    <>
+                      <b>{after} of {ds.length}</b> after the rule
+                    </>
+                  ) : (
+                    <>
+                      {ds.length} {ds.length === 1 ? 'deal' : 'deals'}, no rule
+                    </>
+                  )}
+                </span>
+              )}
             </div>
             <Swimlane data={data} iso3={iso} axis={i === lanes.length - 1} />
             <button type="button" className="lane-x" aria-label={`Remove ${countryName(c?.name ?? iso)}`} onClick={() => setLanes((l) => l.filter((x) => x !== iso))}>

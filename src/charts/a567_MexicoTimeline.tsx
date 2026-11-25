@@ -36,13 +36,14 @@ export function MexicoTimeline({
   const reduce = useReducedMotion()
   const { tip, show, move, hide } = useTooltip()
   const phone = width < 560
-  const height = phone ? 360 : 520
+  const height = phone ? 250 : 520
   const margin = { left: phone ? 6 : 92, right: 14, top: 14, bottom: 26 }
   const x = d3.scaleLinear().domain([2009.5, 2025.5]).range([margin.left, width - margin.right])
   const lane = {
     reg: { y: margin.top, h: height * 0.24 },
     money: { y: margin.top + height * 0.27, h: height * 0.22 },
-    law: { y: margin.top + height * 0.52, h: height * 0.4 },
+    // lawsuit lane ends just above the year axis so squares never overlap the labels
+    law: { y: margin.top + height * 0.52, h: height - margin.bottom - (margin.top + height * 0.52) - 6 },
   }
   const dur = reduce ? 0 : motion.base / 1000
 
@@ -74,6 +75,23 @@ export function MexicoTimeline({
   }, [lawsuits, width, height, fundedLitigants])
 
   const byYear = d3.rollup(lawsuits, (v) => v.length, (l) => l.filed ?? 0)
+  const moneyPos = money.map((d) => {
+    const same = money.filter((o) => o.year === d.year)
+    const idx = same.indexOf(d)
+    const off = same.length > 1 ? (idx - (same.length - 1) / 2) * (phone ? 26 : 34) : 0
+    return { d, cx: x(d.year!), cy: lane.money.y + lane.money.h / 2 + 10 + off, r: Math.max(3.5, rM(d.amount ?? 0)) }
+  })
+  const peak = [...byYear].filter(([y]) => y).sort((a, b) => b[1] - a[1])[0]
+  const after2014 = d3.sum(money.filter((d) => (d.year ?? 0) >= 2014), (d) => d.amount ?? 0)
+  // connectors: each funded litigant's money dot(s) → the centre of its lawsuit squares
+  const connectors = fundedLitigants.flatMap((p) => {
+    const sq = dots.out.filter((o) => o.l.parent === p)
+    const md = moneyPos.filter((mp) => mp.d.parent === p)
+    if (!sq.length || !md.length) return []
+    const tx = d3.mean(sq, (o) => o.x)!
+    const ty = d3.min(sq, (o) => o.y)! - 4
+    return md.map((mp) => ({ p, from: mp, tx, ty, n: sq.length }))
+  })
   const laneLabel = (y: number, t: string, sub: string, color: string, on: boolean) =>
     !phone ? (
       <g opacity={on ? 1 : 0.3}>
@@ -189,8 +207,14 @@ export function MexicoTimeline({
                     onPointerDown={(e) => show(e, <div className="tt-title">{d.company}: {usdM(d.amount)}</div>)}
                   />
                   {(lit || firstNat) && (idx === 0 || same.length === 1) && (
-                    <text x={x(d.year!)} y={firstNat ? cy + r + 13 : cy - r - 5} textAnchor="middle" fontSize={phone ? 9.5 : 10.5} fontWeight={lit && stage >= 3 ? 700 : 550} fill={lit && stage >= 3 ? '#9A4A1F' : '#14213D'}>
-                      {firstNat ? 'Naturasol (3 deals)' : shortCo(d)}
+                    <text x={x(d.year!)} y={firstNat ? cy + r + 13 : cy - r - 5} textAnchor={x(d.year!) > width - 90 ? 'end' : x(d.year!) < 90 ? 'start' : 'middle'} fontSize={phone ? 9.5 : 10.5} fontWeight={lit && stage >= 3 ? 700 : 550} fill={lit && stage >= 3 ? '#9A4A1F' : '#14213D'}>
+                      {firstNat
+                        ? phone
+                          ? ''
+                          : 'Naturasol (3 deals)'
+                        : lit && stage >= 3
+                          ? `${shortCo(d)} · ${lawsuits.filter((l) => l.parent === d.parent).length} lawsuit${lawsuits.filter((l) => l.parent === d.parent).length === 1 ? '' : 's'}`
+                          : shortCo(d)}
                     </text>
                   )}
                 </g>
@@ -242,6 +266,59 @@ export function MexicoTimeline({
               )
             })}
           </m.g>
+
+          {/* ------------- pattern call-outs */}
+          {stage >= 1 && !phone && (
+            <m.text
+              x={x(2014) + 6}
+              y={lane.money.y + 12}
+              fontSize={11.5}
+              fontWeight={650}
+              fill="#9A4A1F"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: dur, delay: reduce ? 0 : 0.3 }}
+            >
+              {usdM(after2014, 0)} committed after the 2014 taxes →
+            </m.text>
+          )}
+          {stage >= 2 && peak && (
+            <m.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: dur, delay: reduce ? 0 : 0.4 }}>
+              <text
+                x={x(peak[0]) - (phone ? 12 : 14)}
+                y={lane.law.y + 14}
+                textAnchor="end"
+                fontSize={phone ? 10 : 12}
+                fontWeight={700}
+                fill="#5C1A1B"
+              >
+                {phone ? `${peak[1]} in ${peak[0]}` : `${peak[1]} lawsuits filed in ${peak[0]}`}
+              </text>
+              {!phone && (
+                <text x={x(peak[0]) - 14} y={lane.law.y + 30} textAnchor="end" fontSize={11} fill="#14213D">
+                  the year warning labels took effect
+                </text>
+              )}
+            </m.g>
+          )}
+          {stage >= 3 &&
+            connectors.map((c, i) => {
+              const mx = (c.from.cx + c.tx) / 2
+              return (
+                <m.g key={c.p + i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: dur, delay: reduce ? 0 : 0.2 + i * 0.2 }}>
+                  <m.path
+                    d={`M${c.from.cx},${c.from.cy + c.from.r} C${c.from.cx},${(c.from.cy + c.ty) / 2} ${mx},${c.ty - 30} ${c.tx},${c.ty}`}
+                    fill="none"
+                    stroke="#B05A2B"
+                    strokeWidth={1.8}
+                    strokeDasharray="4 3"
+                    initial={{ pathLength: reduce ? 1 : 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: reduce ? 0 : 0.9, delay: reduce ? 0 : 0.2 + i * 0.2 }}
+                  />
+                </m.g>
+              )
+            })}
         </svg>
       )}
       <Tooltip tip={tip} />

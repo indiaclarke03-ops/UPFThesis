@@ -20,7 +20,7 @@ export default function Act1Context({ data }: { data: SiteData }) {
         <div className="kicker">1 · The food</div>
         <h3>Four groups of food, by how much they are processed</h3>
         <p className="muted" style={{ maxWidth: '44rem' }}>
-          Hover or tab across the strip. Group 4 is the one linked to diet-related disease, and the one health regulation targets.
+          Click any group to see examples. Group 4 is the one linked to diet-related disease, and the one health regulation targets.
         </p>
         <NovaStrip />
       </div>

@@ -12,6 +12,11 @@ const url = path.startsWith('?') ? base + path : base + '#' + path
 await page.goto(url, { waitUntil: 'networkidle' })
 await page.waitForTimeout(1200)
 if (sel) {
+  // acts mount lazily: scroll down until the target exists
+  for (let i = 0; i < 80 && !(await page.$(sel)); i++) {
+    await page.mouse.wheel(0, 900)
+    await page.waitForTimeout(150)
+  }
   await page.evaluate(([s, x]) => {
     const el = document.querySelector(s)
     if (el) window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY + Number(x))

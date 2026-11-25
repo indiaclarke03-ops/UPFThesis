@@ -14,6 +14,7 @@ import { useData, type Deal } from '../lib/data'
 import { useReducedMotion } from '../lib/hooks'
 import type { Lender } from '../lib/tokens'
 import { QUESTIONS, type AskResult } from './ask'
+import { AskMenu } from './AskMenu'
 import { DealDrawer } from './DealDrawer'
 import { DealTable, toCSV } from './DealTable'
 import { FilterBar } from './FilterBar'
@@ -152,19 +153,7 @@ export default function Explore() {
       </div>
 
       <section className="ask" aria-label="Ask the data">
-        <div className="ask-label">
-          <span aria-hidden="true">◆</span> Ask the data
-          <span className="muted" style={{ letterSpacing: 0, textTransform: 'none', fontWeight: 500 }}>
-            · pre-written questions, answered from the public deal table
-          </span>
-        </div>
-        <div className="ask-chips">
-          {QUESTIONS.map((q) => (
-            <button key={q.id} type="button" className="ask-chip" aria-pressed={askId === q.id} onClick={() => runAsk(q.id)}>
-              {q.q}
-            </button>
-          ))}
-        </div>
+        <AskMenu activeId={askId} onPick={runAsk} onClear={reset} />
         <AnimatePresence mode="wait">
           {answer && (
             <m.div

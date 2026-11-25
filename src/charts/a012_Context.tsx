@@ -40,34 +40,66 @@ const NOVA = [
 
 export function NovaStrip() {
   const [sel, setSel] = useState(4)
+  const reduce = useReducedMotion()
   const g = NOVA.find((x) => x.n === sel)!
   return (
     <div>
-      <div className="a012-nova" role="group" aria-label="The four NOVA food groups">
+      <div className="a012-nova" role="group" aria-label="The four NOVA food groups: choose one to see examples">
         {NOVA.map((x) => (
           <button
             key={x.n}
             type="button"
             className={`a012-nova-g ${x.n === 4 ? 'g4' : ''}`}
             aria-pressed={sel === x.n}
-            onMouseEnter={() => setSel(x.n)}
-            onFocus={() => setSel(x.n)}
+            aria-controls="a012-nova-detail"
             onClick={() => setSel(x.n)}
           >
             <span className="a012-nova-n">{x.n}</span>
             <span className="a012-nova-name">{x.name}</span>
             {x.n === 4 && <span className="a012-nova-desc">The group this thesis follows.</span>}
             <span className="a012-nova-ex" aria-hidden="true">
-              {x.ex.slice(0, x.n === 4 ? 7 : 3).map((e) => (
+              {x.ex.slice(0, x.n === 4 ? 4 : 3).map((e) => (
                 <span key={e}>{e}</span>
               ))}
+            </span>
+            <span className="a012-nova-cta" aria-hidden="true">
+              {sel === x.n ? 'Selected' : 'See examples'}
             </span>
           </button>
         ))}
       </div>
-      <p className="a012-nova-detail" aria-live="polite">
-        <strong>NOVA {g.n}: {g.name}.</strong> {g.desc} <span className="muted">Examples: {g.ex.join(', ')}.</span>
-      </p>
+      <AnimatePresence mode="wait" initial={false}>
+        <m.div
+          key={g.n}
+          id="a012-nova-detail"
+          className={`a012-nova-detail ${g.n === 4 ? 'g4' : ''}`}
+          aria-live="polite"
+          initial={reduce ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduce ? undefined : { opacity: 0, y: -6 }}
+          transition={{ duration: reduce ? 0 : motion.fast / 1000, ease: motion.ease }}
+        >
+          <div className="a012-nova-detail-n" aria-hidden="true">
+            {g.n}
+          </div>
+          <div>
+            <div className="a012-nova-detail-title">
+              NOVA {g.n}: {g.name}
+            </div>
+            <p>{g.desc}</p>
+            <div className="a012-nova-chips">
+              {g.ex.map((e) => (
+                <span key={e}>{e}</span>
+              ))}
+            </div>
+            {g.n === 4 && (
+              <p className="small" style={{ marginTop: '0.6rem', marginBottom: 0 }}>
+                A manufacturer counts as <strong>Tier 1</strong> when products like these make up at least 20% of its sales.
+              </p>
+            )}
+          </div>
+        </m.div>
+      </AnimatePresence>
       <p className="small muted">Classification: Monteiro et al., NOVA food classification (2019).</p>
     </div>
   )

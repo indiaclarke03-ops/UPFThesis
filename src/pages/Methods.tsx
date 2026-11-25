@@ -1,5 +1,5 @@
 /**
- * /methods: counting rules, definitions, validation, regulation sources, the
+ * /methods: counting rules, definitions, regulation sources, the
  * H3 design and notes, limitations, AI disclosure, references, where every
  * number comes from, licence notes and data downloads.
  */
@@ -15,7 +15,6 @@ const SECTIONS = [
   ['version', 'Data version & downloads'],
   ['counting', 'Counting rules'],
   ['definition', 'What counts as a UPF firm'],
-  ['validation', 'Validation'],
   ['regulation', 'Regulation data'],
   ['did-notes', 'The H3 test'],
   ['coi', 'Conflict-of-interest grades'],
@@ -242,30 +241,6 @@ export default function Methods() {
             <p>
               <strong>Tier 1 is a lower bound.</strong> Band C firms (for example dairy groups with some NOVA 4 lines) are left out, about
               US$1.0bn of band C dairy alone.
-            </p>
-          </section>
-
-          <section id="validation">
-            <h2>Validation</h2>
-            <p>A second coder independently coded a sample of deals. Agreement (Cohen’s κ):</p>
-            <div className="xm-kappa">
-              <div>
-                <span className="xm-k">{r.kappa.role.toFixed(2)}</span>
-                <span>Borrower role (manufacturer, processor, excluded)</span>
-              </div>
-              <div>
-                <span className="xm-k">{r.kappa.upf.toFixed(2)}</span>
-                <span>UPF firm (yes / no / unsure)</span>
-              </div>
-              <div>
-                <span className="xm-k">{r.kappa.upf_without_unsure.toFixed(2)}</span>
-                <span>UPF firm, excluding “Unsure”</span>
-              </div>
-            </div>
-            <p className="small muted">
-              Moderate agreement. Band B firms sit closer to the 20% line than band A firms, so the H1 gap is re-checked with band A deals only
-              ({r.h1_gap.robust_band_a}) and with Euromonitor-confirmed firms only ({r.h1_gap.robust_em_confirmed}); both stay far above the
-              pre-set threshold of 2. Source: do-file §9 and §2b.
             </p>
           </section>
 

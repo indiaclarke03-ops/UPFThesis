@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Choropleth, FogBars, GapGrid, IncomeBar, NamedShareBar, ParentPack, TopCountries } from '../charts/a012_Act2'
+import { FogBars, GapGrid, NamedShareBar, ParentPack } from '../charts/a012_Act2'
+import { ConditionMap } from '../charts/a012_ConditionMap'
 import { LenderStream } from '../charts/LenderStream'
 import { Info } from '../components/Info'
 import { ScrollStory } from '../components/ScrollStory'
-import { ActEnd, ChartFrame, ExploreLink } from '../components/ui'
+import { ActEnd, ChartFrame } from '../components/ui'
 import { exploreHref, filterDeals, DEFAULT_FILTERS, byYearLender } from '../lib/aggregate'
 import type { SiteData } from '../lib/data'
 import { countryName, parentName } from '../lib/data'
@@ -95,6 +96,7 @@ export default function Act2Scale({ data }: { data: SiteData }) {
       <ScrollStory
         id="act-2-scale"
         steps={scaleSteps}
+        stepLabels={['Total', 'By lender', 'The trend', 'One deal?']}
         graphic={(step) => (
           <ChartFrame
             title="Public money to ultra-processed food manufacturers"
@@ -103,7 +105,7 @@ export default function Act2Scale({ data }: { data: SiteData }) {
             table={{ head: ['Year', ...LENDERS, 'Total'], rows: rows.map((r) => [r.year, ...LENDERS.map((l) => r[l].toFixed(1)), LENDERS.reduce((s, l) => s + r[l], 0).toFixed(1)]) }}
             explore={{ to: exploreHref({}), label: 'Explore every deal' }}
           >
-            <LenderStream deals={t1} mode={step === 0 ? 'total' : step === 1 ? 'lenders' : 'periods'} showCci={step >= 3} />
+            <LenderStream deals={t1} mode={step === 0 ? 'total' : step === 1 ? 'lenders' : 'periods'} showCci={step >= 3} trend={step === 2} peaks={step === 0} />
           </ChartFrame>
         )}
       />
@@ -116,6 +118,7 @@ export default function Act2Scale({ data }: { data: SiteData }) {
       <ScrollStory
         id="act-2-gap"
         steps={gapSteps}
+        stepLabels={['Named', 'All deals', 'In money', 'By lender']}
         graphic={(step) => (
           <ChartFrame
             title={step < 2 ? 'The 153 Tier 1 deals, by lender' : 'Named versus all Tier 1 money, by lender'}
@@ -185,6 +188,7 @@ export default function Act2Scale({ data }: { data: SiteData }) {
         id="act-2-parents"
         side="right"
         steps={packSteps}
+        stepLabels={['82 groups', 'Top three', 'Concentration', 'Global names?']}
         graphic={(step) => (
           <ChartFrame
             title="Parent groups receiving Tier 1 money"
@@ -243,7 +247,7 @@ export default function Act2Scale({ data }: { data: SiteData }) {
       <div className="container" style={{ marginTop: '2rem' }}>
         <ChartFrame
           title="Tier 1 money by country, 2010–2025"
-          sub="Hover a country for its total, deals and income group"
+          sub="Use the buttons to change the conditions; hover a country for its total, deals and income group"
           summary={`Choropleth of Tier 1 money. Top five: ${c.top_countries.slice(0, 5).map((t) => `${countryName(t.name)} ${usdM(t.usd_m)}`).join('; ')}. Middle-income countries took ${Math.round(c.by_income_2010.Middle.share * 100)}% of country money.`}
           table={{
             head: ['Country', 'Tier 1 US$m', 'Deals', 'Per 1,000 people (US$)', 'Income 2010'],
@@ -254,27 +258,7 @@ export default function Act2Scale({ data }: { data: SiteData }) {
           }}
           explore={{ to: exploreHref({}), label: 'Explore by country' }}
         >
-          <div className="a012-map-grid">
-            <Choropleth data={data} />
-            <div>
-              <div className="kicker" style={{ marginBottom: 4 }}>
-                Top five recipients
-              </div>
-              <TopCountries data={data} />
-              <hr className="rule" style={{ margin: '1.2rem 0' }} />
-              <div className="kicker" style={{ marginBottom: 4 }}>
-                By income group in 2010 <Info id="income_2010" />
-              </div>
-              <p className="small" style={{ margin: 0 }}>
-                Share of the {usdBn(c.money_with_country.usd_m)} with a country
-              </p>
-              <IncomeBar data={data} />
-              <p className="small muted" style={{ marginTop: '0.6rem' }}>
-                Descriptive: this shows where the money goes, not what it does to diets.
-              </p>
-              <ExploreLink to={exploreHref({ income: ['Middle'] })} label="Middle-income deals" />
-            </div>
-          </div>
+          <ConditionMap data={data} />
         </ChartFrame>
       </div>
 

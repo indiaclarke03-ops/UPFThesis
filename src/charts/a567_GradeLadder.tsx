@@ -39,7 +39,7 @@ export function GradeLadder({
   const { tip, show, move, hide } = useTooltip()
   const phone = width < 560
   const height = hProp ?? (phone ? 330 : 520)
-  const margin = { top: 16, right: 12, bottom: 34, left: phone ? 12 : 196 }
+  const margin = { top: 16, right: phone ? 54 : 104, bottom: 34, left: phone ? 12 : 196 }
   const iw = Math.max(0, width - margin.left - margin.right)
   // grade 3 at the top; rows sized by how crowded they are (grade 0 holds most groups)
   const W = [0.46, 0.1, 0.22, 0.22]
@@ -115,6 +115,23 @@ export function GradeLadder({
                   {g} · {gradeLabel[g]} <tspan fill="#5E6472" fontWeight={400}>({counts[g].length})</tspan>
                 </text>
               )}
+              {/* share of all Tier 1 money on this rung: the pattern in one number */}
+              {counts[g].length > 0 && (() => {
+                const all = d3.sum(firms, (f) => f.t1)
+                const rung = d3.sum(counts[g], (f) => f.t1)
+                const hot = g >= 2
+                const lit = focus === 'all' || (focus === 'coi' && hot) || (focus === 'yildiz' && g === 2)
+                return (
+                  <g opacity={lit ? 1 : 0.35} style={{ transition: 'opacity 500ms' }}>
+                    <text x={width - 8} y={rowY(g)} dy={phone ? '0.1em' : '-0.05em'} textAnchor="end" fontFamily="var(--serif)" fontSize={phone ? 18 : 28} fontWeight={700} fill={hot ? '#7A2A22' : '#5E6472'}>
+                      {Math.round((rung / all) * 100)}%
+                    </text>
+                    <text x={width - 8} y={rowY(g)} dy={phone ? '1.3em' : '1.35em'} textAnchor="end" fontSize={phone ? 9 : 10.5} fill="#5E6472">
+                      of the money
+                    </text>
+                  </g>
+                )
+              })()}
               {counts[g].length === 0 && !phone && (
                 <text x={margin.left + iw / 2} y={rowY(g)} dy="0.32em" textAnchor="middle" fontSize={11.5} fontStyle="italic" fill="#5E6472">
                   No funded group is graded 1

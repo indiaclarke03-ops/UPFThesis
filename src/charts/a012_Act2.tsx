@@ -14,6 +14,7 @@ import { LENDERS, incomeColor, lenderColor, lenderText, motion, type Lender } fr
 import { Info } from '../components/Info'
 import { Toggle, Tooltip, useTooltip } from '../components/ui'
 import { useWorld } from './geo'
+import { PackDownload } from './a012_PackExport'
 
 const rand = (i: number) => {
   const x = Math.sin(i * 12.9898 + 78.233) * 43758.5453
@@ -86,9 +87,9 @@ export function GapGrid({ data, step, parents, onParents }: { data: SiteData; st
                       width={cell - pad}
                       height={cell - pad}
                       rx={Math.min(3, cell * 0.12)}
-                      fill={u.lit ? '#B05A2B' : on ? '#D98A55' : '#E9E3D8'}
-                      stroke={u.lit ? '#14213D' : 'none'}
-                      strokeWidth={u.lit ? 1.4 : 0}
+                      fill={u.lit ? '#14213D' : on ? '#C8692F' : '#E9E3D8'}
+                      stroke={u.lit ? '#F2C9A8' : 'none'}
+                      strokeWidth={u.lit ? 1.2 : 0}
                       opacity={on ? 1 : 0.55}
                       filter={!u.lit && !on ? `url(#blur-${filterId})` : undefined}
                       style={{ transitionDelay: reduce || u.lit ? '0ms' : `${developed ? u.delay * 1000 : 0}ms` }}
@@ -106,15 +107,15 @@ export function GapGrid({ data, step, parents, onParents }: { data: SiteData; st
                     const bw = (m2 / max) * w
                     return (
                       <>
-                        <rect width={bw} height={12} fill="#D98A55" rx={2} />
-                        <m.rect animate={{ width: (m1 / max) * w }} transition={{ duration: 0.6 }} height={12} fill="#B05A2B" stroke="#14213D" strokeWidth={1} rx={2} />
+                        <rect width={bw} height={14} fill="#C8692F" rx={2} />
+                        <m.rect animate={{ width: (m1 / max) * w }} transition={{ duration: 0.6 }} height={14} fill="#14213D" rx={2} />
                         {!phone && (
                           <text y={28} fontSize={10.5} fill="var(--muted)">
                             <tspan x={0}>{usdM(m1, 0)} named</tspan>
                             <tspan x={0} dy="1.2em">of {usdM(m2, 0)}</tspan>
                           </text>
                         )}
-                        <text y={72} style={{ fontFamily: 'var(--serif)' }} fontSize={phone ? 20 : 28} fontWeight={650} fill={h1[b.l].gap == null ? 'var(--muted)' : 'var(--ink)'}>
+                        <text y={72} style={{ fontFamily: 'var(--serif)' }} fontSize={phone ? 20 : 30} fontWeight={700} fill={h1[b.l].gap == null ? 'var(--muted)' : b.l === 'EBRD' && !parents ? '#9A4A1F' : 'var(--ink)'}>
                           {fmtGap(b.l)}
                         </text>
                         <text y={88} fontSize={10.5} fill="var(--muted)">
@@ -131,10 +132,10 @@ export function GapGrid({ data, step, parents, onParents }: { data: SiteData; st
       )}
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', marginTop: 6 }} className="small">
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 11, height: 11, background: '#B05A2B', outline: '1.4px solid #14213D', borderRadius: 2 }} /> Borrower named like a global top-30 UPF company
+          <span style={{ width: 11, height: 11, background: '#14213D', borderRadius: 2 }} /> Visible: borrower named like a global top-30 UPF company
         </span>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, opacity: developed ? 1 : 0.75 }}>
-          <span style={{ width: 11, height: 11, background: '#D98A55', borderRadius: 2 }} /> UPF firm not visible by name
+          <span style={{ width: 11, height: 11, background: '#C8692F', borderRadius: 2 }} /> Hidden: UPF firm not visible by name
         </span>
         {showMoney && (
           <Toggle
@@ -202,7 +203,7 @@ export function FogBars({ data }: { data: SiteData }) {
                   <rect width="100%" height="100%" fill="#fff" filter={`url(#fog-${fid})`} opacity={0.9} />
                 </svg>
                 <span className="a012-fog-label" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: '0.72rem', fontWeight: 650, color: '#14213D', whiteSpace: 'nowrap', textShadow: '0 0 6px #fff' }}>
-                  {r.share > 0.4 ? 'through intermediaries: end borrowers not disclosed' : 'not disclosed'}
+                  {r.share > 0.4 ? 'end borrowers not disclosed' : 'not disclosed'}
                 </span>
               </div>
             </div>
@@ -234,6 +235,9 @@ export function ParentPack({ data, step }: { data: SiteData; step: number }) {
     return (root.leaves() as unknown as d3.HierarchyCircularNode<(typeof data.firms)[number]>[]).map((n, rank) => ({ n, rank }))
   }, [data.firms, size])
 
+  const vmax = nodes.length ? nodes[0].n.data.t1 : 1
+  const ramp = d3.scaleSequentialSqrt([0, vmax], d3.interpolateRgbBasis(['#F1DCC9', '#DB9563', '#B05A2B', '#6E2F12']))
+  const n2v = (rank: number) => nodes[rank]?.n.data.t1 ?? 0
   const highlight = (rank: number) => {
     if (step === 0) return 'all'
     if (step === 1) return rank < 3 ? 'on' : 'off'
@@ -245,7 +249,7 @@ export function ParentPack({ data, step }: { data: SiteData; step: number }) {
     if (h === 'on') return '#B05A2B'
     if (h === 'mid') return '#D98A55'
     if (h === 'off') return '#EAE2D5'
-    return rank < 10 ? '#C26A38' : '#E3B996'
+    return ramp(n2v(rank))
   }
 
   return (
@@ -254,7 +258,11 @@ export function ParentPack({ data, step }: { data: SiteData; step: number }) {
         <svg width={width} height={size} role="img" aria-label={`Circle pack of ${c.n_parent_groups} parent groups sized by Tier 1 money.`}>
           <g transform={`translate(${(width - size) / 2},0)`}>
             {nodes.map(({ n, rank }) => {
-              const label = n.r > 30 && (step === 0 || highlight(rank) !== 'off')
+              const fsz = Math.max(8.5, Math.min(14, n.r / 4.2))
+              const longest = Math.max(...shortName(n.data.parent).split('\n').map((t) => t.length), 7)
+              const fits = longest * fsz * 0.56 < n.r * 1.8
+              const label = fits && n.r > (step === 0 ? 24 : 30) && (step === 0 || highlight(rank) !== 'off')
+              const dark = step === 0 ? n.data.t1 > vmax * 0.12 : highlight(rank) !== 'off'
               return (
                 <g key={n.data.slug} transform={`translate(${n.x},${n.y})`}>
                   <m.circle
@@ -290,7 +298,7 @@ export function ParentPack({ data, step }: { data: SiteData; step: number }) {
                     onPointerLeave={hide}
                   />
                   {label && (
-                    <text textAnchor="middle" pointerEvents="none" fill={highlight(rank) === 'off' ? '#5E6472' : '#fff'} fontSize={Math.min(14, n.r / 4.2)} fontWeight={650}>
+                    <text textAnchor="middle" pointerEvents="none" fill={dark ? '#fff' : '#5C2A12'} fontSize={fsz} fontWeight={650}>
                       {shortName(n.data.parent)
                         .split('\n')
                         .map((t, i, arr) => (
@@ -310,6 +318,7 @@ export function ParentPack({ data, step }: { data: SiteData; step: number }) {
         </svg>
       )}
       <Tooltip tip={tip} />
+      <PackDownload data={data} />
     </div>
   )
 }

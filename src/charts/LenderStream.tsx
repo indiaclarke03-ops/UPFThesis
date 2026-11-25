@@ -29,9 +29,13 @@ export interface LenderStreamProps {
   showCci?: boolean
   height?: number
   dark?: boolean
+  /** overlay period-average steps and the 2010–13 → 2022–25 change arrow */
+  trend?: boolean
+  /** label the two largest years */
+  peaks?: boolean
 }
 
-export function LenderStream({ deals, mode = 'periods', highlight = null, showCci = false, height: hProp, dark = false }: LenderStreamProps) {
+export function LenderStream({ deals, mode = 'periods', highlight = null, showCci = false, height: hProp, dark = false, trend = false, peaks = false }: LenderStreamProps) {
   const [ref, { width }] = useSize<HTMLDivElement>()
   const reduce = useReducedMotion()
   const { tip, show, move, hide } = useTooltip()
@@ -158,6 +162,58 @@ export function LenderStream({ deals, mode = 'periods', highlight = null, showCc
             )}
             {/* hover rule */}
             {hoverYear != null && <line x1={x(hoverYear)} x2={x(hoverYear)} y1={0} y2={ih} stroke={ink} strokeWidth={0.75} strokeDasharray="3 3" />}
+            {/* trend: period-average steps + change arrow */}
+            {trend &&
+              (() => {
+                const avgs = periodTotals.map((p) => ({ ...p, avg: p.usd / (p.y1 - p.y0 + 1) }))
+                const first = avgs[0]
+                const last = avgs[avgs.length - 1]
+                const ratio = first.avg > 0 ? last.avg / first.avg : 0
+                const word = ratio >= 1.8 && ratio < 2.3 ? 'roughly doubled' : ratio >= 2.3 ? `about ×${ratio.toFixed(1)}` : ratio > 1 ? `up ×${ratio.toFixed(1)}` : 'down'
+                const xa = x(first.y1) - 6
+                const xb = x(last.y0) + 6
+                const ya = y(first.avg)
+                const yb = y(last.avg)
+                const midX = (xa + xb) / 2
+                const lift = Math.min(ya, yb) - 46
+                return (
+                  <m.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: dur, delay: reduce ? 0 : 0.25 }} pointerEvents="none">
+                    {avgs.map((p) => (
+                      <g key={'avg' + p.key}>
+                        <line x1={x(p.y0) - (p.y0 === 2010 ? 0 : 10)} x2={x(p.y1) + (p.y1 === 2025 ? 0 : 10)} y1={y(p.avg)} y2={y(p.avg)} stroke={dark ? '#FFFFFF' : '#14213D'} strokeWidth={2.2} strokeDasharray="6 4" opacity={0.95} />
+                        <rect x={(x(p.y0) + x(p.y1)) / 2 - 44} y={y(p.avg) - 22} width={88} height={17} rx={3} fill={dark ? 'rgba(11,20,38,0.8)' : 'rgba(255,253,249,0.92)'} />
+                        <text x={(x(p.y0) + x(p.y1)) / 2} y={y(p.avg) - 10} textAnchor="middle" fontSize={10.5} fontWeight={650} fill={ink}>
+                          avg {usdAxis(p.avg)}/yr
+                        </text>
+                      </g>
+                    ))}
+                    <defs>
+                      <marker id="ls-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                        <path d="M0,0 L10,5 L0,10 z" fill="#B05A2B" />
+                      </marker>
+                    </defs>
+                    <path d={`M${xa},${ya - 4} Q${midX},${lift - 20} ${xb},${yb - 26}`} fill="none" stroke="#B05A2B" strokeWidth={2} markerEnd="url(#ls-arrow)" />
+                    <rect x={midX - 74} y={lift - 34} width={148} height={22} rx={11} fill="#B05A2B" />
+                    <text x={midX} y={lift - 19} textAnchor="middle" fontSize={12} fontWeight={700} fill="#fff">
+                      {`${word} (×${ratio.toFixed(2)})`}
+                    </text>
+                  </m.g>
+                )
+              })()}
+            {/* peaks */}
+            {peaks &&
+              [...rows]
+                .map((r) => ({ year: r.year, tot: LENDERS.reduce((s2, l) => s2 + r[l], 0) }))
+                .sort((a, b) => b.tot - a.tot)
+                .slice(0, 2)
+                .map((pk) => (
+                  <g key={'pk' + pk.year} pointerEvents="none">
+                    <circle cx={x(pk.year)} cy={y(pk.tot)} r={3.5} fill={ink} />
+                    <text x={x(pk.year)} y={y(pk.tot) - 9} textAnchor="middle" fontSize={11} fontWeight={700} fill={ink}>
+                      {pk.year}: {usdAxis(pk.tot)}
+                    </text>
+                  </g>
+                ))}
             {/* period brackets */}
             {mode === 'periods' &&
               periodTotals.map((p, i) => {

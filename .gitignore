@@ -30,3 +30,6 @@ __pycache__/
 test-results/
 playwright-report/
 lighthouse-reports/
+
+# local notes, never published
+Website_Build_Prompt_*.md

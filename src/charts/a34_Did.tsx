@@ -275,15 +275,32 @@ export function DidExplainer({ did, step, estimate }: { did: DidData; step: numb
                 <m.line
                   x1={xPre}
                   y1={y(bPre)}
-                  x2={xPost}
-                  y2={y(ghost)}
                   stroke={TEAL}
                   strokeWidth={2.5}
                   strokeDasharray="7 6"
-                  initial={reduce ? false : { pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
+                  initial={reduce ? false : { x2: xPre, y2: y(bPre) }}
+                  animate={{ x2: xPost, y2: y(ghost) }}
                   transition={{ duration: reduce ? 0 : 1.1, delay: reduce ? 0 : 0.5 }}
                 />
+                {/* direct labels: how much each group changed */}
+                {W >= 520 && (
+                  <m.g initial={reduce ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduce ? 0 : 0.5, delay: reduce ? 0 : 0.9 }}>
+                    <text
+                      x={(xPre + xPost) / 2}
+                      y={(y(bPre) + y(bPost)) / 2 - 12}
+                      textAnchor="middle"
+                      fontSize={12}
+                      fontWeight={700}
+                      fill={TEAL}
+                      transform={`rotate(${(Math.atan2(y(bPost) - y(bPre), xPost - xPre) * 180) / Math.PI} ${(xPre + xPost) / 2} ${(y(bPre) + y(bPost)) / 2 - 12})`}
+                    >
+                      actual change {bPost - bPre >= 0 ? '+' : '−'}{Math.abs(bPost - bPre).toFixed(2)}
+                    </text>
+                    <text x={(xPre + xPost) / 2} y={(y(nPre) + y(nPost)) / 2 - 9} textAnchor="middle" fontSize={11.5} fontWeight={650} fill={GREY}>
+                      no-rule change {nPost - nPre >= 0 ? '+' : '−'}{Math.abs(nPost - nPre).toFixed(2)}
+                    </text>
+                  </m.g>
+                )}
                 <circle cx={xPost} cy={y(ghost)} r={6} fill="#F7F5F1" stroke={TEAL} strokeWidth={2} strokeDasharray="3 2" />
                 <text x={xPost + 12} y={y(ghost)} dy="0.32em" fontSize={11.5} fill={TEAL} fontWeight={600}>
                   {ghost.toFixed(2)}{W >= 520 ? '  if rules made no difference' : ''}
@@ -300,6 +317,11 @@ export function DidExplainer({ did, step, estimate }: { did: DidData; step: numb
                   <text x={xPost - 34} y={(y(ghost) + y(bPost)) / 2 + 16} dy="0.32em" textAnchor="end" fontSize={11} fill={MUTED}>
                     the DiD estimate
                   </text>
+                  {W >= 520 && (
+                    <text x={xPost - 34} y={(y(ghost) + y(bPost)) / 2 + 31} dy="0.32em" textAnchor="end" fontSize={10.5} fill={MUTED}>
+                      = {(bPost - bPre).toFixed(2).replace('-', '−')} − ({(nPost - nPre).toFixed(2).replace('-', '−')})
+                    </text>
+                  )}
                 </m.g>
               </m.g>
             )}

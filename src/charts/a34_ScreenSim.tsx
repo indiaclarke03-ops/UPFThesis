@@ -103,9 +103,7 @@ export function ScreenSim({ deals }: { deals: Deal[] }) {
           <b>{total ? ((res.caught / total) * 100).toFixed(0) : 0}%</b> of the {usdBn(total)} of Tier 1 money from{' '}
           {lenders.length === 4 ? 'all four lenders' : lenders.join(', ')}.
         </div>
-        <div className="sim-meter" aria-hidden="true">
-          <div style={{ width: `${total ? (res.caught / total) * 100 : 0}%` }} />
-        </div>
+        <SplitBar caught={res.caught} total={total} from={from} threshold={threshold} />
 
         <div ref={ref} style={{ width: '100%', marginTop: '1rem' }}>
           {width > 0 && (
@@ -168,6 +166,7 @@ export function ScreenSim({ deals }: { deals: Deal[] }) {
             </svg>
           )}
         </div>
+        <Cumulative rows={byYear} from={from} />
         <div className="chart-foot">
           <span>
             <span style={{ display: 'inline-block', width: 10, height: 10, background: '#B05A2B', marginRight: 5, verticalAlign: -1 }} />
@@ -178,6 +177,83 @@ export function ScreenSim({ deals }: { deals: Deal[] }) {
         </div>
       </div>
       <Tooltip tip={tip} />
+    </div>
+  )
+}
+
+/** Caught vs missed, as one labelled bar. */
+function SplitBar({ caught, total, from, threshold }: { caught: number; total: number; from: number; threshold: 20 | 50 }) {
+  const share = total ? caught / total : 0
+  const missed = Math.max(0, total - caught)
+  const why = from > 2010 && threshold === 50 ? 'before the screen, or band B' : from > 2010 ? 'approved before the screen' : threshold === 50 ? 'band B firms (20–50% NOVA 4)' : ''
+  return (
+    <div className="sim-split" aria-hidden="true">
+      <div className="sim-split-bar">
+        <m.div className="sim-split-caught" initial={false} animate={{ width: `${share * 100}%` }} transition={{ duration: 0.55, ease: [0.22, 0.61, 0.36, 1] }}>
+          {share > 0.18 && <span>Caught {usdBn(caught)}</span>}
+        </m.div>
+        <div className="sim-split-missed">{share < 0.82 && <span>Missed {usdBn(missed)}</span>}</div>
+      </div>
+      <div className="sim-split-legend">
+        <span><b className="copper">{(share * 100).toFixed(0)}%</b> caught</span>
+        {missed > 0.5 && <span className="muted">{(100 - share * 100).toFixed(0)}% missed{why ? `: ${why}` : ''}</span>}
+      </div>
+    </div>
+  )
+}
+
+/** Cumulative money over time: everything lent vs what the screen would have stopped. */
+function Cumulative({ rows, from }: { rows: { y: number; total: number; caught: number }[]; from: number }) {
+  const [ref, { width }] = useSize<HTMLDivElement>()
+  const reduce = useReducedMotion()
+  let a = 0
+  let c = 0
+  const cum = rows.map((r) => ({ y: r.y, all: (a += r.total), caught: (c += r.caught) }))
+  const H = 170
+  const mg = { t: 22, r: width < 520 ? 10 : 118, b: 22, l: 44 }
+  const x = d3.scaleLinear().domain([2010, 2025]).range([mg.l, Math.max(mg.l + 20, width - mg.r)])
+  const y = d3.scaleLinear().domain([0, d3.max(cum, (d) => d.all) || 1]).nice().range([H - mg.b, mg.t])
+  const areaAll = d3.area<(typeof cum)[number]>().x((d) => x(d.y)).y0(y(0)).y1((d) => y(d.all)).curve(d3.curveMonotoneX)
+  const areaC = d3.area<(typeof cum)[number]>().x((d) => x(d.y)).y0(y(0)).y1((d) => y(d.caught)).curve(d3.curveMonotoneX)
+  const last = cum[cum.length - 1]
+  const midMiss = last.all - last.caught
+  return (
+    <div ref={ref} style={{ marginTop: '0.75rem' }}>
+      {width > 0 && (
+        <svg width={width} height={H} role="img" aria-label={`Cumulative Tier 1 money reached ${usdBn(last.all)} by 2025; a screen adopted in ${from} would have caught ${usdBn(last.caught)}.`}>
+          <text x={mg.l} y={11} fontSize={11} fill="#5E6472">Cumulative money, 2010–2025</text>
+          {y.ticks(3).map((t) => (
+            <g key={t}>
+              <line x1={mg.l} x2={width - mg.r} y1={y(t)} y2={y(t)} stroke="#E7E1D6" strokeDasharray={t ? '2 3' : undefined} />
+              <text x={mg.l - 6} y={y(t)} dy="0.32em" textAnchor="end" fontSize={10} fill="#5E6472">{t ? usdAxis(t) : '0'}</text>
+            </g>
+          ))}
+          <path d={areaAll(cum) ?? ''} fill="url(#sim-hatch)" stroke="#9AA0A6" strokeWidth={1} />
+          <defs>
+            <pattern id="sim-hatch" width={6} height={6} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <rect width={6} height={6} fill="#F1EEE8" />
+              <line x1={0} y1={0} x2={0} y2={6} stroke="#C9C3B7" strokeWidth={1.4} />
+            </pattern>
+          </defs>
+          <m.path initial={false} animate={{ d: areaC(cum) ?? '' }} transition={{ duration: reduce ? 0 : 0.55 }} fill="#B05A2B" opacity={0.92} />
+          {from > 2010 && <line x1={x(from)} x2={x(from)} y1={mg.t} y2={H - mg.b} stroke="#14213D" strokeDasharray="3 3" />}
+          {from > 2010 && (
+            <text x={x(from) + 4} y={mg.t + 8} fontSize={10.5} fill="#14213D">screen starts {from}</text>
+          )}
+          {width >= 520 && (
+            <>
+              <text x={width - mg.r + 8} y={y(last.all)} dy="0.32em" fontSize={11.5} fontWeight={650} fill="#5E6472">All {usdBn(last.all)}</text>
+              <text x={width - mg.r + 8} y={Math.max(y(last.caught), y(last.all) + 16)} dy="0.32em" fontSize={11.5} fontWeight={700} fill="#9A4A1F">Caught {usdBn(last.caught)}</text>
+              {midMiss > 200 && (
+                <text x={width - mg.r + 8} y={(y(last.all) + y(last.caught)) / 2 + 14} dy="0.32em" fontSize={10.5} fill="#5E6472">missed {usdBn(midMiss)}</text>
+              )}
+            </>
+          )}
+          {[2010, 2015, 2020, 2025].map((t) => (
+            <text key={t} x={x(t)} y={H - 5} fontSize={10} textAnchor="middle" fill="#5E6472">{t}</text>
+          ))}
+        </svg>
+      )}
     </div>
   )
 }

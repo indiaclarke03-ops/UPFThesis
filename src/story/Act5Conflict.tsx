@@ -55,6 +55,7 @@ export default function Act5Conflict({ data }: { data: SiteData }) {
       <ScrollStory
         id="act-5-ladder"
         steps={steps}
+        stepLabels={steps.length === 4 ? ['All groups', 'Grade 0', 'Grades 2–3', 'Yıldız'] : undefined}
         graphic={(step) => (
           <ChartFrame
             title="Funded parent groups, by evidence of opposing health regulation"

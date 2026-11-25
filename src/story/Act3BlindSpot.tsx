@@ -63,6 +63,7 @@ export default function Act3BlindSpot({ data }: { data: SiteData }) {
       <ScrollStory
         id="act-3-matrix"
         steps={steps}
+        stepLabels={['The lists', 'Tobacco', 'Alcohol, weapons', 'UPF', 'Drinks, BMS, nutrition', 'A screen exists']}
         graphic={(step) => {
           const [cols, comp, focus] = plan[Math.min(step, plan.length - 1)]
           return (

@@ -1,6 +1,7 @@
 import * as d3 from 'd3'
 import { CiPlot, DidExplainer } from '../charts/a34_Did'
-import { RegSpread, statusIn } from '../charts/a34_RegSpread'
+import { RegPanel } from '../charts/a34_RegPanel'
+import { statusIn } from '../charts/a34_RegSpread'
 import { SwimlaneSet } from '../charts/a34_Swimlane'
 import { Info } from '../components/Info'
 import { ScrollStory } from '../components/ScrollStory'
@@ -74,18 +75,19 @@ export default function Act4Regulation({ data }: { data: SiteData }) {
       <ScrollStory
         id="act-4-spread"
         steps={spreadSteps}
+        stepLabels={['2005', '2012', 'The 2013–19 wave', '2025']}
         graphic={(step, progress) => {
           const i = Math.min(step, SPREAD_YEARS.length - 1)
           const year = i < SPREAD_YEARS.length - 1 ? Math.round(SPREAD_YEARS[i] + (SPREAD_YEARS[i + 1] - SPREAD_YEARS[i]) * Math.min(1, progress * 1.15)) : 2025
           return (
             <ChartFrame
               title="Regulation spreads"
-              sub={phone ? undefined : 'First binding or voluntary UPF rule in force (sugary-drink taxes, front-of-pack labels, marketing limits, salt and trans-fat limits, UPF taxes)'}
+              sub={phone ? undefined : 'UPF rules in force each year. Scroll to move through time, or take the controls: play, pick a measure, overlay the money.'}
               summary={`Countries with a binding UPF rule in force: ${nBind(2005)} in 2005, ${nBind(2012)} in 2012, ${nBind(2019)} in 2019 and ${nBind(2025)} in 2025.`}
               table={{ head: ['Year', 'Countries with a binding rule'], rows: d3.range(2000, 2026).map((y) => [y, nBind(y)]) }}
-              source="H4-core regulation events, one designated source per domain (Reg_Events)."
+              source={phone ? 'H4-core events (Reg_Events).' : 'H4-core regulation events, one designated source per domain (Reg_Events).'}
             >
-              <RegSpread data={data} year={year} />
+              <RegPanel data={data} scrollYear={year} />
             </ChartFrame>
           )
         }}
@@ -121,6 +123,7 @@ export default function Act4Regulation({ data }: { data: SiteData }) {
       <ScrollStory
         id="act-4-did"
         steps={didSteps}
+        stepLabels={['The question', 'Two groups', 'The averages', 'The gap']}
         graphic={(step) => (
           <ChartFrame
             title="Tier 1 money per 1,000 people, before and after"
