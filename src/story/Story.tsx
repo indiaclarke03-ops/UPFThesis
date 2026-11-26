@@ -3,6 +3,7 @@ import { ACTS, ProgressRail } from '../components/Layout'
 import { Skeleton } from '../components/ui'
 import { useData, type SiteData } from '../lib/data'
 import Act0Hero from './Act0Hero'
+import { Summary } from './a012_Summary'
 
 // Acts 1–7 are split into their own chunks and mounted as the reader approaches,
 // so the hero paints fast on phones. Deep links (#act-n) still work: the
@@ -38,8 +39,17 @@ function LazyAct({ id, C, data, eager }: { id: string; C: (typeof LAZY)[number][
     if (!el) return
     const io = new IntersectionObserver(([e]) => e.isIntersecting && setShow(true), { rootMargin: '150% 0px' })
     io.observe(el)
-    return () => io.disconnect()
-  }, [show])
+    // "Jump to act" requests mount every act up to the target so the layout is final before scrolling.
+    const onJump = (e: Event) => {
+      const target = LAZY.findIndex((a) => a.id === (e as CustomEvent<string>).detail)
+      if (LAZY.findIndex((a) => a.id === id) <= target) setShow(true)
+    }
+    window.addEventListener('act-jump', onJump)
+    return () => {
+      io.disconnect()
+      window.removeEventListener('act-jump', onJump)
+    }
+  }, [show, id])
   return (
     <div ref={ref}>
       {show ? (
@@ -77,6 +87,7 @@ export default function Story() {
     <>
       <ProgressRail />
       <Act0Hero data={data} />
+      <Summary data={data} />
       {LAZY.map((a, i) => (
         <LazyAct key={a.id} id={a.id} C={a.C} data={data} eager={warm && i < 1} />
       ))}

@@ -827,3 +827,118 @@
   padding: 0.25rem 0.7rem;
   font-size: 0.75rem;
 }
+
+/* ---------- In 60 seconds: four finding cards under the hero ---------- */
+.a012-sum {
+  background: var(--paper-deep);
+  border-bottom: 1px solid var(--rule);
+  padding: clamp(2.5rem, 6vw, 4.5rem) var(--gutter);
+}
+.a012-sum-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+.a012-sum-title {
+  font-family: var(--serif);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  margin: 0 0 1.5rem;
+  color: var(--ink);
+}
+.a012-sum-kicker {
+  display: block;
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--copper-text);
+  margin-bottom: 0.35rem;
+}
+.a012-sum-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+.a012-sum-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-top: 4px solid var(--copper);
+  border-radius: var(--radius);
+  padding: 1.15rem 1.15rem 1rem;
+  box-shadow: var(--shadow);
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.a012-sum-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 2px 4px rgba(20, 33, 61, 0.08), 0 14px 32px rgba(20, 33, 61, 0.12);
+}
+.a012-sum-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.a012-sum-n {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.75rem;
+  letter-spacing: 0;
+}
+.a012-sum-big {
+  font-family: var(--serif);
+  font-size: clamp(1.7rem, 2.6vw, 2.3rem);
+  font-weight: 650;
+  line-height: 1.05;
+  color: var(--copper-text);
+}
+.a012-sum-text {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  flex: 1;
+}
+.a012-sum-go {
+  align-self: flex-start;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--navy);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.a012-sum-go:hover {
+  color: var(--copper-text);
+}
+@media (max-width: 960px) {
+  .a012-sum-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .a012-sum-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .a012-sum-card {
+    transition: none;
+  }
+  .a012-sum-card:hover {
+    transform: none;
+  }
+}
